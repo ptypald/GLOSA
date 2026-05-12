@@ -1,1 +1,5 @@
-*.Mathematica linguist-detectable=false
+# Exclude Wolfram/Mathematica files from GitHub language statistics
+*.nb linguist-detectable=false
+*.wl linguist-detectable=false
+*.wls linguist-detectable=false
+*.m linguist-detectable=false

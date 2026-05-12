@@ -9,6 +9,12 @@ build/
 *.exe
 a.out
 
+# Python cache and environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
 # Local editor and notebook byproducts
 .ipynb_checkpoints/
 *.swp
