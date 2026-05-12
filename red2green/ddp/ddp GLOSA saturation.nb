@@ -4522,19 +4522,6 @@ aSatU1: `` -- aSatU2: `` -- aSat: `` -- dUx: ``\>\"", ",", "k", ",", "aPoint",
  CellLabel->"In[1]:=",ExpressionUUID->"a08c9499-8651-4707-9065-9891602d9bc6"],
 
 Cell[BoxData[
- TemplateBox[{
-  "SetDirectory", "cdir", 
-   "\"Cannot set current directory to \
-\\!\\(\\*RowBox[{\\\"\\\\\\\"/Users/panos/Desktop/test/glosa/ddp/untitled \
-folder/outputs\\\\\\\"\\\"}]\\).\"", 2, 3, 1, 20882197473581542426, "Local"},
-  "MessageTemplate"]], "Message", "MSG",
- CellChangeTimes->{{3.852013347271658*^9, 3.8520133642354603`*^9}, 
-   3.92225709526234*^9},
- CellLabel->
-  "During evaluation of \
-In[1]:=",ExpressionUUID->"46737571-f8b9-41b6-9fd3-c41ade6d6848"],
-
-Cell[BoxData[
  InterpretationBox["\<\"Iteration \\!\\(\\*RowBox[{\\\"1\\\"}]\\)\"\>",
   StringForm["Iteration ``", 1],
   Editable->False]], "Print",
@@ -5494,4 +5481,3 @@ Cell[284744, 5442, 168, 2, 58, "Input",ExpressionUUID->"5e409b95-06c5-4782-9b88-
 }
 ]
 *)
-

@@ -38,8 +38,14 @@ double *x_opt, *v_opt, *u_opt;
 /* UP problem */
 double te_up;
 
-#define OUTPUT 1
+#define OUTPUT 0
 #define SCENARIO 3
+
+#if (SCENARIO == 1)
+#define MAX_FIT_ITERATIONS 4
+#else
+#define MAX_FIT_ITERATIONS 5
+#endif
 
 /* same with discrete differential dynamic programming (DDDP) */
 #if (SCENARIO ==  1)
@@ -528,9 +534,9 @@ static double newton_raphson(double t0, double x0, double v0, double te) {
 	return te;
 }
 
-double compute_real_cost(){
+static double compute_real_cost(int print_trace){
 
-	double *phi, J_opt, p;
+	double *phi;
 	double T_max = 30.0;
 	int newtonIntervals = 1;
 	double newton_add_term = 5.0;
@@ -542,12 +548,13 @@ double compute_real_cost(){
 	for (int k = P.numsteps-1; k >= 0; k--) {
 		
 		double x = x_opt[k], v = v_opt[k], u = u_opt[k];
+		double J_opt = 0.0;
+		double p = 0.0;
 
 		double result = 0.0;
 		if (T_min <= k && k <= T_max) {
-			double te_init, temp_te, check_te, temp_cost = DBL_MAX;
-			double checkSpeed = v;
-			int negativeSpeed = 0;
+			double te_init, temp_te = NAN, check_te, temp_cost = DBL_MAX;
+			int found_te = 0;
 			
 			
 			/* calculate max te assuming the min speed is 1 */
@@ -556,31 +563,42 @@ double compute_real_cost(){
 
 			for (int i = 0; i < newtonIntervals; i++) {
 				double te_cost = 0.0;
+				double checkSpeed = v;
+				int negativeSpeed = 0;
 
 				check_te = newton_raphson(k, x, v, te_init);
 
 				if (check_te > 2.0*max_te || isnan(check_te) || check_te < 0.0)
 					continue;
 
+				double step = (check_te - k) / P.numsteps;
+				if (step <= 0.0)
+					continue;
+
 				for (int i = 0; i < P.numsteps; i++) {
-					double step = (check_te - k) / (P.numsteps);
 					double t = (i*(check_te - k) / (P.numsteps - 1) + k);
 
 					te_cost += 0.5*pow(UP_control(t, k, x, v, check_te), 2);
 					/* skip optimal te that leads to negative speed trajectories */
-					checkSpeed += UP_control(t, k, x, v, check_te)*P.T;
+					checkSpeed += UP_control(t, k, x, v, check_te) * step;
 					if (checkSpeed < 0.0)
 						negativeSpeed = 1;
 				}
+				te_cost *= step;
 
 				if ((check_te > k) && (te_cost < temp_cost) && (negativeSpeed != 1)) {
 					temp_cost = te_cost;
 					temp_te = check_te;
+					found_te = 1;
 				}
 				te_init += newton_add_term;
 			}
+			if (!found_te) {
+				fprintf(stderr, "Could not compute terminal cost at k=%d (x=%.4f, v=%.4f).\n", k, x, v);
+				free(phi);
+				exit(EXIT_FAILURE);
+			}
 			double te = temp_te;			
-			double te_opt = te;
 			
 			// calculate the optimal control cost
 			double step;
@@ -594,8 +612,6 @@ double compute_real_cost(){
 			J_opt = wopt * result;
 			p = 1.0 / ((T_max - k) + 1.0);
 		}
-		else 
-			p = 0.0;
 
 		if (k == P.numsteps - 1) {
 			phi[k] = J_opt;
@@ -604,17 +620,19 @@ double compute_real_cost(){
 		// fprintf(stderr, "(%d) phi: %.4f -- p: %.4f -- J_opt: %.4f \n", k, phi[k+1], p, J_opt);
 		
 		phi[k] = ((1.0 - p) * (0.5*pow(u, 2) + phi[k+1])) + (p * J_opt);
-		fprintf(stderr, "(%d) phi: %.4f \n", k, phi[k]);
 	}
-	return 0;
+
+	double expected_cost = phi[0];
+	free(phi);
+	return expected_cost;
 }
 
 static void dp(int it) {
 	
 	int k;
 	double dx, dv;
-	assert((x_opt = (double*)calloc(sizeof(double), P.numsteps)));
-	assert((v_opt = (double*)calloc(sizeof(double), P.numsteps)));
+	assert((x_opt = (double*)calloc(sizeof(double), P.numsteps + 1)));
+	assert((v_opt = (double*)calloc(sizeof(double), P.numsteps + 1)));
 	assert((u_opt = (double*)calloc(sizeof(double), P.numsteps)));
 
 	for (k = P.numsteps - 1; k >= 0; k--) {
@@ -814,32 +832,20 @@ static void dp(int it) {
 			mat_sub(eyeMat, stage[k].temp, stage[k].temp2, 2);
 			mat_mult(stage[k].Finv, stage[k].temp2, Hstar, 2);
 		}
-
-		// If[lambdaStar[[1, 1]] > 0, 
-		// 	Ct = ( {{-1.0},{0.0}} );
-  		// 	d = {{constraint[0.0, 0.0, xPoint, vPoint]}};
-  		// 	tempCstar = Transpose[Ct] . Inverse[FF] . Ct;
- 		//  	Cstar = Inverse[tempCstar] . Transpose[Ct] . Inverse[FF];
-  		// 	Hstar = Inverse[FF] . (( {{1.0, 0.0},{0.0, 1.0}} ) - Ct . Cstar)];
 		
 		/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 		// P = d;
 		double PP = d;
-		// Jx[dx_, dv_, da_] = D[constraint[dx, dv, xPoint, vPoint], dx];
-		// Jv[dx_, dv_, da_] = D[constraint[dx, dv, xPoint, vPoint], dv];
-		// R = ( {{Jx[xPoint, vPoint, aPoint], Jv[xPoint, vPoint, aPoint]}} );
 		double R[2];
-		R[0] = 2.0; R[1] = 2.0; 
+		R[0] = 2.0 / pow(P.T, 2);
+		R[1] = 2.0 / pow(P.T, 2);
 
-		/////////////////////    DONE UP TO HERE    //////////////////////
-		// alpha = -Hstar . HH + Transpose[Cstar] . P;
 		stage[k].tempOneDim[0] = 0.0; stage[k].tempOneDim[1] = 0.0;
 		stage[k].tempOneDim2[0] = 0.0; stage[k].tempOneDim2[1] = 0.0;
 		vect_mult_const(Cstar, PP, stage[k].tempOneDim, 2);
 		mat_mult_vect(Hstar, stage[k].H, stage[k].tempOneDim2, 2);
 		mat_sub2(stage[k].tempOneDim, stage[k].tempOneDim2, stage[k].alpha, 2);
 
-		// beta = -Hstar . Transpose[EE] + Transpose[Cstar] . R;
 		double **Etransp;
 		assert((Etransp = (double **)calloc(sizeof(double*), 2)));
 		for (int i = 0; i < 2; i++)
@@ -854,7 +860,6 @@ static void dp(int it) {
 
 		/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-		// PP = DD + Transpose[beta] . FF . beta + EE . beta + Transpose[beta] . Transpose[EE]; (PP -> AA)
 		double **betaT, **temp3, **temp4, **temp5, **temp6;
 		assert((temp3 = (double **)calloc(sizeof(double*), 2)));
 		assert((temp4 = (double **)calloc(sizeof(double*), 2)));
@@ -903,13 +908,17 @@ static void dp(int it) {
 	x_opt[0] = init_x[0];
 	v_opt[0] = init_v[0];
 
-	FILE *f;
-	char buf[0x100];
-	snprintf(buf, sizeof(buf), "outputs/(%02d) x0=%.1f - v0=%.1f.txt", it + 1, x_opt[0], v_opt[0]);
-	f = fopen(buf,"w");
-	// if (OUTPUT) {
-	fprintf(f, "k  Position  Speed  Control  Init_x  Init_v  Init_a  SDP_x  SDP_v  SDP_a \n");
-	// }
+	FILE *f = NULL;
+	if (OUTPUT) {
+		char buf[0x100];
+		snprintf(buf, sizeof(buf), "outputs/(%02d) x0=%.1f - v0=%.1f.txt", it + 1, x_opt[0], v_opt[0]);
+		f = fopen(buf,"w");
+		if (f == NULL) {
+			perror("Could not open DDP output file");
+			exit(EXIT_FAILURE);
+		}
+		fprintf(f, "k  Position  Speed  Control  Init_x  Init_v  Init_a  SDP_x  SDP_v  SDP_a \n");
+	}
 
 	for (int i = 0; i < P.numsteps; i++) {
 		double dx = (x_opt[i] - init_x[i]), dv = (v_opt[i] - init_v[i]);
@@ -918,12 +927,15 @@ static void dp(int it) {
 		
 		x_opt[i + 1] = x_opt[i] + v_opt[i] * P.T + 0.5 * pow(P.T, 2) * u_opt[i];
 		v_opt[i + 1] = v_opt[i] + P.T * u_opt[i];
-		// if (OUTPUT) {
-		fprintf(f, "%d  %.4f  %.4f  %.4f  %.4f  %.4f  %.4f  %.4f  %.4f  %.4f\n", 
-			i, x_opt[i], v_opt[i], u_opt[i], init_x[i], init_v[i], init_u[i], dddp_x[i], dddp_v[i], dddp_u[i]);
-		// }
+		if (OUTPUT) {
+			fprintf(f, "%d  %.4f  %.4f  %.4f  %.4f  %.4f  %.4f  %.4f  %.4f  %.4f\n", 
+				i, x_opt[i], v_opt[i], u_opt[i], init_x[i], init_v[i], init_u[i], dddp_x[i], dddp_v[i], dddp_u[i]);
+		}
 		// fprintf(stderr, "i: %d -- u: %.6f -- x: %.6f -- v: %.6f \n", i, u_opt[i], x_opt[i], v_opt[i]);
 	}
+
+	if (OUTPUT)
+		fclose(f);
 
 }
 
@@ -952,17 +964,16 @@ int main(int argc, char **argv) {
 	start_all = clock();
 	while(true){	
 		
-		// fprintf(stderr, "it: %d \n", it);
 		/* run dp */
 		dp(it);
-		
 		
 		double sum = 0.0;
 		for (int i = 0; i < P.numsteps; i++)
 			sum += sqrt(pow(init_u[i] - u_opt[i], 2));
-		fprintf(stderr, "it: %d -- norm: %.4f \n", it+1, sum);
+		double expected_cost = compute_real_cost(0);
+		fprintf(stderr, "it: %d -- norm: %.4f -- expected cost: %.4f \n", it+1, sum, expected_cost);
 
-		if ( sum < 0.001 || it >= 4 )
+		if (sum < 0.001 || it >= MAX_FIT_ITERATIONS - 1)
 		// if ( sum < 0.001 )
 			break;
 
@@ -981,7 +992,8 @@ int main(int argc, char **argv) {
 	double cpu_time_used_all = ((double)(end_all - start_all)) / CLOCKS_PER_SEC;
 	fprintf(stderr, "\n Total CPU time (in %d it.): %.8f \n\n", it + 1, cpu_time_used_all);
 
-	compute_real_cost();
+	double final_expected_cost = compute_real_cost(1);
+	fprintf(stderr, "\n Final expected cost: %.4f \n", final_expected_cost);
 
 	return 0;
 }

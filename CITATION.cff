@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the associated GLOSA publications."
+title: "GLOSA Research Code"
+type: software
+authors:
+  - family-names: Typaldos
+    given-names: Panagiotis
+repository-code: "https://github.com/ptypald/GLOSA"
+preferred-citation:
+  type: article
+  title: "Modified dynamic programming algorithms for GLOSA systems with stochastic signal switching times"
+  authors:
+    - family-names: Typaldos
+      given-names: Panagiotis
+    - family-names: Papageorgiou
+      given-names: Markos
+  journal: "Transportation Research Part C"
+  volume: "157"
+  year: 2023
+  doi: "10.1016/j.trc.2023.104364"

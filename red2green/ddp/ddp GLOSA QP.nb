@@ -4786,19 +4786,6 @@ Cell[BoxData[{
  CellLabel->"In[1]:=",ExpressionUUID->"a08c9499-8651-4707-9065-9891602d9bc6"],
 
 Cell[BoxData[
- TemplateBox[{
-  "SetDirectory", "cdir", 
-   "\"Cannot set current directory to \
-\\!\\(\\*RowBox[{\\\"\\\\\\\"/Users/panos/Desktop/test/glosa/ddp/outputs\\\\\\\
-\"\\\"}]\\).\"", 2, 3, 1, 20882196497086440117, "Local"},
-  "MessageTemplate"]], "Message", "MSG",
- CellChangeTimes->{3.8490787409847803`*^9, 3.85416981877721*^9, 
-  3.854169874844636*^9, 3.922256961389186*^9},
- CellLabel->
-  "During evaluation of \
-In[1]:=",ExpressionUUID->"3323f217-c903-4bab-bb2b-489389639ae4"],
-
-Cell[BoxData[
  InterpretationBox["\<\"Iteration \\!\\(\\*RowBox[{\\\"1\\\"}]\\)\"\>",
   StringForm["Iteration ``", 1],
   Editable->False]], "Print",
@@ -8303,4 +8290,3 @@ Cell[405624, 8237, 168, 2, 58, "Input",ExpressionUUID->"5e409b95-06c5-4782-9b88-
 }
 ]
 *)
-

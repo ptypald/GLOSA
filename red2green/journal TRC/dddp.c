@@ -62,6 +62,39 @@ double newton_add_term = 5.0;
 int negSpeedInitCon;
 
 #define SCENARIO 0
+
+/* Built-in Scenario 1 fallback used when no saved SDP initialization exists. */
+static const double FALLBACK_SCENARIO_1_X0 = 0.0;
+static const double FALLBACK_SCENARIO_1_V0 = 5.0;
+static const double fallback_scenario_1_v[] = {
+	5.0000000000000355, 4.811738999540683, 4.643294946498108, 4.494667840872311, 4.365857682663291,
+	4.25686447187105, 4.167688208495586, 4.098328892536901, 4.048786523994992, 4.019061102869862,
+	4.009152629161509, 4.019061102869934, 4.048786523995137, 4.098328892537117, 4.167688208495876,
+	4.2568644718714115, 4.365857682663725, 4.4946678408728165, 4.643294946498687, 4.811738999541333,
+	5.0000000000007585, 5.20807794787696, 5.435972843169941, 5.683684685879699, 5.9512134760062345,
+	6.238559213549548, 6.5457218985096395, 6.872701530886509, 7.219498110680156, 7.586111637890581,
+	7.972542112517783
+};
+static const double fallback_scenario_1_x[] = {
+	0.0, 4.904218087485628, 9.630083648220293, 14.197413629620769, 18.62602497910384,
+	22.935734644086278, 27.146359571984867, 31.277716710216378, 35.34962300619759, 39.38189540734529,
+	43.39435086107624, 47.406806314807234, 51.439078715955034, 55.51098501193643, 59.64234215016819,
+	63.85296707806712, 68.16267674304994, 72.59128809253347, 77.1586180739345, 81.88448363466978,
+	86.78870172215609, 91.89108928381022, 97.21146326704894, 102.76964061928904, 108.58543828794726,
+	114.67867322044042, 121.06916236418527, 127.77672266659863, 134.82117107509723, 142.22232453709785,
+	150.00000000001734
+};
+static const double fallback_scenario_1_u[] = {
+	-0.19816947416774147, -0.17835252675096372, -0.15853557933418594, -0.13871863191740819,
+	-0.11890168450063043, -0.09908473708385268, -0.07926778966707491, -0.05945084225029715,
+	-0.039633894833519395, -0.019816947416741643, 0.0, 0.01981694741681389, 0.03963389483359164,
+	0.05945084225036942, 0.07926778966714718, 0.09908473708392493, 0.11890168450070268,
+	0.13871863191748043, 0.1585355793342582, 0.17835252675103594, 0.1981694741678137,
+	0.2179864215845915, 0.23780336900136925, 0.257620316418147, 0.27743726383492473,
+	0.2972542112517025, 0.31707115866848035, 0.3368881060852581, 0.35670505350203585,
+	0.3765220009188136, 0.39633894833559136
+};
+
 #if (SCENARIO == 1)
 /* scenario 1 x0=0 - v0=5 (analytical solution) */
 double X0 = 0.0, V0 = 5.0;
@@ -3817,10 +3850,6 @@ double idm_accel(double x, double xl, double v, double vl, double v0, double ts,
 			accIDM = idm.aMax * a1;
 		else
         	accIDM = idm.aMax * fmin(a1, a2);
-
-		/* second try */
-		// sStar = idm.s0 + fmax(v*ts + ((v * (v - vl)) / (2.0 * sqrt(idm.aMax * idm.b))), 0.0);
-		// accIDM = aFree - (idm.aMax * pow(sStar/s, 2));
     }
     else
         fprintf(stderr, "Unknown Leader Type. \n");
@@ -3889,7 +3918,6 @@ static void printsol(node_t initial, int it) {
 		}
 		
 		if (DISPLAY) {
-			// fprintf(stderr, "%d \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f\n",
 			fprintf(stderr, "%d \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \n",
 				k,
 				state[k].x,
@@ -3902,13 +3930,6 @@ static void printsol(node_t initial, int it) {
 				p[k],
 				real_cost,
 				real_escape_cost
-				// ACCESS(escape, state[k]),
-				// D.vmin[k],
-				// D.vmax[k],
-				// D.xmin[k],
-				// D.xmax[k],
-				// init_v[k],
-				// init_x[k]
 				);
 		}
 		
@@ -3971,27 +3992,8 @@ static void printsol(node_t initial, int it) {
 			v0 = state[t0].v;
 			te = ACCESS(te_opt, state[t0]);
 
-			// // steps = (int)(ceil(te) - t0);
-			// steps = 9;
-			// a_oc[i] = (double*)calloc(steps + 1, sizeof(double)); x_oc[i] = (double*)calloc(steps + 1, sizeof(double)); v_oc[i] = (double*)calloc(steps + 1, sizeof(double));
-			// dt = (te - t0) / (steps + 1);
-			// v_oc[i][0] = v0;
-			// for (int j = 0; j <= steps; j++) {
-			// 	t = ((j * dt) + t0);
-			// 	a_oc[i][j] = UP_control(t, t0, x0, v0, te);
-			// 	// v_oc[i][j] = UP_speed(t, t0, x0, v0, te);
-			// 	// x_oc[i][j] = UP_position(t, t0, x0, v0, te);
-			// 	v_oc[i][j + 1] = v_oc[i][j] + a_oc[i][j] * (te - t0) / (steps);
-			// 	fprintf(stderr,"%d \t (%.4f) \t %.4f \t %.4f \t %.4f \n", t0, t, a_oc[i][j], v_oc[i][j], x_oc[i][j]);
-			// }
-			// fprintf(stderr,"%d \t (%.4f) \t %.4f \t %.4f \n", t0, t, a_oc[i][steps], v_oc[i][steps]);
-
-			// double fuel_det = arrb(v_oc[i], a_oc[i], steps, dt);
-			// fprintf(stderr, "fuel deterministic: (%d) %.4f \n", t0, fuel_det);
-			// fprintf(stderr,"\n");
 			
 			double xk = x0, vk = v0;
-			// int opNumsteps = (int)(te - t0) + 1;
 			int opNumsteps = P.numsteps;
 			int count = 0;
 			double a_up[100], v_up[100], x_up[100];
@@ -4004,13 +4006,8 @@ static void printsol(node_t initial, int it) {
 			}
 			
 			for (int i = 0; i < count; i++) {
-				// x_up[i + 1] = x_up[i] + v_up[i] * step + 0.5 * pow(step, 2) * a_up[i];
-				// v_up[i + 1] = v_up[i] + step * a_up[i];
-				// xk += vk * step + 0.5 * pow(step, 2) * a_up[i];
 				vk += step * a_up[i];
-
 				v_up[i] = vk;
-				// fprintf(stderr, "v: %.4f -- x: %.4f \n", v_up[i+1], x_up[i+1]);
 			}
 			double fuel_det = arrb(v_up, a_up, count, step);
 			fprintf(stderr, "fuel deterministic: (%d) %.4f \n", t0, fuel_det);
@@ -4183,7 +4180,18 @@ static void dp(void) {
 	}
 }
 
-static void read_sdp_init() {
+static void load_fallback_scenario_1(void) {
+	P.x0 = FALLBACK_SCENARIO_1_X0;
+	P.v0 = FALLBACK_SCENARIO_1_V0;
+
+	for (int k = 0; k < P.numsteps; k++) {
+		initial_x[k] = fallback_scenario_1_x[k];
+		initial_v[k] = fallback_scenario_1_v[k];
+		initial_u[k] = fallback_scenario_1_u[k];
+	}
+}
+
+static void read_sdp_init(void) {
 	double dval, dval2, dval3;
 	int ival;
 
@@ -4191,6 +4199,13 @@ static void read_sdp_init() {
 	char buff[0x100];
 	snprintf(buff, sizeof(buff), "results_sdp/stochastic/stochastic x0=%.1f - v0=%.1f.txt", P.x0, P.v0);
 	f = fopen(buff, "r");
+	if (f == NULL) {
+		fprintf(stderr, "Missing DDDP initialization file: %s\n", buff);
+		fprintf(stderr, "Generate or provide the SDP initialization trajectory before running DDDP.\n");
+		fprintf(stderr, "Falling back to built-in Scenario 1 initial trajectory (x0=0.0, v0=5.0).\n");
+		load_fallback_scenario_1();
+		return;
+	}
 
 	while (fgets(buff, sizeof(buff), f)) {
 		// fprintf(stderr, "%s \n", buff);
@@ -4205,6 +4220,8 @@ static void read_sdp_init() {
 		}
 
 	}
+
+	fclose(f);
 
 }
 
@@ -4225,8 +4242,6 @@ int main(int argc, char **argv) {
       		du = init_du;
       		// P.x0 = scenario_x[xi]; P.v0 = scenario_v[vi];
       		P.x0 = 0.0; P.v0 = 11.0;
-			fprintf(stderr, "x0: %.4f -- v0: %.4f \n", P.x0, P.v0);
-      
 			assert((opt_x = (double*)calloc(sizeof(double), P.numsteps)));
 			assert((opt_v = (double*)calloc(sizeof(double), P.numsteps)));
 			assert((opt_u = (double*)calloc(sizeof(double), P.numsteps)));
@@ -4245,6 +4260,7 @@ int main(int argc, char **argv) {
 			// if (negSpeedInitCon == 1) continue;
 			// 2. read initial trajectory (deterministic solution of pessimistic case)
 			read_sdp_init();
+			fprintf(stderr, "x0: %.4f -- v0: %.4f \n", P.x0, P.v0);
 
 			// for (int k = 0; k < P.numsteps; k++)
 			// 	fprintf(stderr, "(%d) \t init_x: %.4f \t init_v: %.4f \t init_a: %.4f \n", k, initial_x[k], initial_v[k], initial_u[k]);

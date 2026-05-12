@@ -244,16 +244,10 @@ static void init_D(double T, int iteration) {
 			D.vmax[k] = MIN(init_v[k] + Dv * D.dv, VMAX);
 	
 		}
-
 		D.NV[k] = (int)ceil((D.vmax[k] - D.vmin[k]) / D.dv) + 1;
-		
-		//fprintf(stderr, "D.NV[%d]: %d -- D.vmin[%d]: %.3f -- init_v[%d]: %.3f -- D.vmax[%d]: %.3f\n", k, D.NV[k], k, D.vmin[k], k, init_v[k], k, D.vmax[k]);
-		//fprintf(stderr, "D.vmin[%d]: %.3f -- D.vmax[%d]: %.3f\n",k, D.vmin[k], k, D.vmax[k]);
-
 		
 		for (iv = 0; iv < D.NV[k]; iv++) {
 			D.V[iv][k] = D.vmin[k] + D.dv * iv;
-		//fprintf(stderr, "D.V[%d][%d]: %.3f \n", iv, k, D.V[iv][k]);
 		}
 	}
 	
@@ -271,19 +265,14 @@ static void init_D(double T, int iteration) {
 			D.xmax[k] = MIN(init_x[k] + Dx * D.dx, XMAX);
 
 		}
-
 		D.NX[k] = (int)ceil((D.xmax[k] - D.xmin[k]) / D.dx) + 1;
 		
-		//fprintf(stderr, "D.NX[%d]: %d -- D.xmin[%d]: %.3f -- init_x[%d]: %.3f -- D.xmax[%d]: %.3f\n", k, D.NX[k], k, D.xmin[k], k, init_x[k], k, D.xmax[k]);
-		//fprintf(stderr, "D.xmin[%d]: %.3f -- D.xmax[%d]: %.3f\n",k, D.xmin[k], k, D.xmax[k]);
 
 		for (ix = 0; ix < D.NX[k]; ix++) {
 			D.X[ix][k] = D.xmin[k] + D.dx * ix;
-		//fprintf(stderr, "D.X[%d][%d]: %.3f \n", ix, k, D.X[ix][k]);
 		}
 	}
 
-	//fprintf(stderr, "NV: %d, NU: %d, NX: %d, numsteps: %d \n", D.NV[0], D.NU, D.NX[0], P.numsteps);
 	assert((D.NXlive_min = (int*)calloc(sizeof(int), P.numsteps)));
 	assert((D.NXlive_max = (int*)calloc(sizeof(int), P.numsteps)));
 	assert((D.NVlive_min = (int*)calloc(sizeof(int), P.numsteps)));
@@ -355,7 +344,6 @@ static int discretizexv(node_t *state, int k) {
 
 	ix = (int)round((state->x - D.X[0][k]) / D.dx);
 	iv = (int)round((state->v - D.V[0][k]) / D.dv);
-	//fprintf(stderr, "ix: %d -- x: %.3f -- D.X[0][%d]: %.3f \n", ix, state->x, k, D.X[0][k]);
 	if (!(ix >= 0 && ix < D.NX[k])) 
 		return 1;
 	
@@ -364,7 +352,7 @@ static int discretizexv(node_t *state, int k) {
 
 	state->x = D.X[(state->ix = ix)][k];
 	state->v = D.V[(state->iv = iv)][k];
-	//fprintf(stderr, "next.k: %d -- next.x: %.3f -- next.v: %.3f -- D.X[%d][%d]: %.3f \n", k, state->x, state->v, ix, k, D.X[ix][k]);
+	
 	return 0;
 }
 
@@ -779,12 +767,6 @@ static void printsol(node_t initial, int it) {
 				real_cost,
 				real_escape_cost,
 				ACCESS(escape, state[k])
-				// D.vmin[k],
-				// D.vmax[k],
-				// D.xmin[k],
-				// D.xmax[k],
-				// init_v[k],
-				// init_x[k]
 				);
 		}
 
@@ -809,11 +791,9 @@ static void printsol(node_t initial, int it) {
 
 	double xk = x0, vk = v0;
 	int opNumsteps = (int)(te - t0) + 1;
-	//double step = (te - t0) / (opNumsteps);
 	int count = 0;
 	double a_op[100];
 
-	//for (double t = t0; t <= (te); t = t + step) {
 	double step = (te - t0) / opNumsteps;
 	for (int i = 0; i < opNumsteps; i++) {
 		double t = (i*(te - t0) / (opNumsteps - 1) + t0);
@@ -824,11 +804,9 @@ static void printsol(node_t initial, int it) {
 	for (int i = 0; i < count; i++) {
 		xk += vk * step + 0.5*pow(step, 2)*a_op[i];
 		vk += step * a_op[i];
-		//fprintf(stderr," %f \n",xk);
 	}
 
 	opt_J_it = ACCESS(J, state[0]);
-	//opt_J_it = real_escape_cost;
 	free(state);
 }
 
@@ -844,7 +822,7 @@ static void dp(void) {
 			fprintf(stderr, "Deterministic DP \n");
 		fprintf(stderr, "NU: %d -- NV: %d -- NX: %d \n", D.NU, D.NV[2], D.NX[2]);
 	}
-	//fprintf(stderr, "NU: %d -- NV: %d -- NX: %d \n", D.NU, D.NV[2], D.NX[2]);
+	
 	/* for each stage k */
 	for (k = P.numsteps - 1; k >= 0; k--) {
 		if (DISPLAY)
@@ -1070,11 +1048,6 @@ int main(int argc, char **argv) {
 		for (int i = 0; i < P.numsteps; i++)
 			sum += pow(opt_u[i] - init_u[i], 2);
 		double term_criterion = sqrt(sum);
-
-		//if (((term_criterion < TERM_CRITERION) && (du_it_prev != du)) || ((fabs(opt_J_it - opt_J_prev_it) < TERM_CRITERION_2) && (opt_J_it != opt_J_prev_it))) {
-			//fprintf(stderr, "Termintation criterion: term_criterion: %.3f -- du_it_prev: %.3f -- du: %.3f \n", term_criterion, du_it_prev, du);
-			//break;
-	//	}
 		/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 		/* check if reduction of du is needed */
 		du_it_prev = du;

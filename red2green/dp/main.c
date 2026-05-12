@@ -488,25 +488,8 @@ static void printsol(node_t initial) {
 	state[0] = initial;
 	ctrl_t c;
 
-	// FILE *output, *output2, *simoutput;
-
-	// if (STOCHASTIC) {
-	// 	fopen(&output, "results/output_stochastic.txt", "w+");
-	// 	fopen(&output2, "results/output_oc_stochastic.txt", "w+");
-	// 	fopen(&simoutput, "viz/data/data-stochastic.js", "w+");
-	// }
-	// else {
-	// 	fopen(&output, "results/output_deterministic.txt", "w+");
-	// 	fopen(&output2, "results/output_oc_deterministic.txt", "w+");
-	// 	fopen(&simoutput, "viz/data/data-deterministic.js", "w+");
-	// }
-
 	fprintf(stderr, "\nk \t Position \t Speed    \t Control  \t Cost \t \t Hybrid  \t J_opt  \t te \t Probability \t Real Cost (1/2u^2) \t Real+escape \t Escape \n");
 	fprintf(stderr, "-----------------------------------------------------------------------------------------------------------------\n");
-	// if (STOCHASTIC)
-	// 	fprintf(simoutput, "var DataStochastic = {\n");
-	// else
-	// 	fprintf(simoutput, "var DataDeterministic = {\n");
 
 	double hybrid_cost = 0.0;
 	double real_cost = 0.0;
@@ -563,29 +546,6 @@ static void printsol(node_t initial) {
 			real_escape_cost,
 			ACCESS(escape, state[k])
 			);
-		// fprintf(output, "%d \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \n",
-		// 	k, 
-		// 	state[k].x,
-		// 	state[k].v,
-		// 	c.u,
-		// 	ACCESS(J, state[k]),
-		// 	hybrid_cost,
-		// 	ACCESS(J_opt, state[k]),
-		// 	ACCESS(te_opt, state[k]),
-		// 	p[k],
-		// 	real_cost,
-		// 	real_escape_cost,
-		// 	ACCESS(escape, state[k])
-		// 	);
-
-		// fprintf(simoutput, "\"x(%d)\":%.4f,\n", k, state[k].x);
-		// fprintf(simoutput, "\"vx(%d)\":%.4f,\n", k, state[k].v);
-		// fprintf(simoutput, "\"ux(%d)\":%.4f,\n", k, c.u);
-		// fprintf(simoutput, "\"J(%d)\":%.4f,\n", k, real_escape_cost);
-		// if (STOCHASTIC)
-		// 	fprintf(simoutput, "\"y(%d)\":%d,\n", k, 0);
-		// else
-		// 	fprintf(simoutput, "\"y(%d)\":%d,\n", k, 1);
 
 		if (k < P.numsteps - 1) {
 			if ((nextptr = getnext(state[k], c)) == NULL) {
@@ -608,43 +568,21 @@ static void printsol(node_t initial) {
 
 	double xk = x0, vk = v0;
 	int opNumsteps = (int)(te - t0) + 1;
-	//double step = (te - t0) / (opNumsteps);
 	int count = 0;
 	double a_op[100];
 
-	//for (double t = t0; t <= (te); t = t + step) {
 	double step = (te - t0) / opNumsteps;
 	for (int i = 0; i < opNumsteps; i++) {
 		double t = (i*(te - t0) / (opNumsteps - 1) + t0);
 		a_op[count] = oc_control(t, t0, x0, v0, te);
-		// fprintf(simoutput, "\"ux(%d)\":%.4f,\n", count + P.numsteps-1, a_op[count]);
-		// fprintf(output2, "%.4f \t", a_op[count]);
-		// fprintf(stderr, "t: %.4f(%.4f) -- count: %d \n", t, te, count);
 		count++;
 	}
 	
 	for (int i = 0; i < count; i++) {
 		xk += vk * step + 0.5*pow(step, 2)*a_op[i];
 		vk += step * a_op[i];
-
-		// fprintf(simoutput, "\"x(%d)\":%.4f,\n", i + P.numsteps, xk);
-		// fprintf(simoutput, "\"vx(%d)\":%.4f,\n", i + P.numsteps, vk);
-
-		// fprintf(output2, "\n %.4f", xk);
-		// fprintf(output2, "\t %.4f", vk);
 	}
 
-	// fprintf(simoutput, "\"xe\":%.4f,\n", xe);
-	// fprintf(simoutput, "\"xmax\":%.4f,\n", x_max);
-	// fprintf(simoutput, "\"T_min\":%.4f,\n", T_min);
-	// fprintf(simoutput, "\"T_max\":%.4f,\n", T_max);
-	// fprintf(simoutput, "\"T_tl\":%.4f,\n", T_tl);
-	// fprintf(simoutput, "\"k\":%d,\n", P.numsteps);
-	// fprintf(simoutput, "\"kOC\":%d,\n", count-1);
-	// fprintf(simoutput, "\"Step\":%f,\n", P.T);
-	// fprintf(simoutput, "\"numlanes\":%d,\n", 2);
-	// fprintf(simoutput, "\"C\":%f,\n", 4.0);
-	// fprintf(simoutput, "};\n\n");
 	for (int i = 0; i < P.numsteps; i++)
 		fprintf(stderr, "%.4f, ", opt_x[i]);
 	fprintf(stderr, "\n");
@@ -658,9 +596,6 @@ static void printsol(node_t initial) {
 	fprintf(stderr, "\n");
 
 	free(state);
-	// fclose(simoutput);
-	// fclose(output);
-	// fclose(output2);
 }
 
 static void dp(void) {

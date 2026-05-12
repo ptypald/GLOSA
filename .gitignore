@@ -1,1 +1,23 @@
-/.DS_Store
+# macOS
+.DS_Store
+
+# Native build artifacts
+build/
+*.o
+*.obj
+*.out
+*.exe
+a.out
+
+# Local editor and notebook byproducts
+.ipynb_checkpoints/
+*.swp
+*.swo
+
+# Generated result folders used by several experiments
+outputs/
+results_sdp/
+
+# Common generated text outputs from local runs
+output_*.txt
+IDM - *.txt

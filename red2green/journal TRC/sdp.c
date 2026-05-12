@@ -20,6 +20,7 @@
 
 #define TIME_STEP 1.0
 #define DU 0.125
+#define OUTPUT 0
 
 /* scenario 1 */
 double X0 = 0.0, V0 = 11.0;							// stochactic DP initial states
@@ -486,19 +487,20 @@ static void printsol(node_t initial) {
 	state[0] = initial;
 	ctrl_t c;
 
-	FILE *output; // *output2;
-	char buf[0x100];
-	if (STOCHASTIC) {
-		snprintf(buf, sizeof(buf), "results_sdp/stochastic x0=%.1f - v0=%.1f.txt", P.x0, P.v0);
+	FILE *output = NULL; // *output2;
+	if (OUTPUT) {
+		char buf[0x100];
+		if (STOCHASTIC) {
+			snprintf(buf, sizeof(buf), "results_sdp/stochastic x0=%.1f - v0=%.1f.txt", P.x0, P.v0);
+		}
+		else {
+			snprintf(buf, sizeof(buf), "results_sdp/deterministic x0=%.1f - v0=%.1f.txt", P.x0, P.v0);
+		}
 		output = fopen(buf,"w");
-		// output = fopen("results_sdp/output_stochastic.txt", "w+");
-		// output2 = fopen("results_sdp/output_oc_stochastic.txt", "w+");
-	}
-	else {
-		snprintf(buf, sizeof(buf), "results_sdp/deterministic x0=%.1f - v0=%.1f.txt", P.x0, P.v0);
-		output = fopen(buf,"w");
-		// output = fopen("results_sdp/output_deterministic.txt", "w+");
-		// output2 = fopen("results_sdp/output_oc_deterministic.txt", "w+");
+		if (output == NULL) {
+			perror("Could not open SDP output file");
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	fprintf(stderr, "\nk \t Position \t Speed    \t Control  \t Cost \t \t Hybrid  \t J_opt  \t te \t Probability \t Real Cost (1/2u^2) \t Real+escape \t Escape \n");
@@ -512,8 +514,6 @@ static void printsol(node_t initial) {
 	double opt_x[P.numsteps+1], opt_v[P.numsteps+1], opt_u[P.numsteps+1];
 	for (k = 0; k < P.numsteps; k++) {
 		c = ACCESS(C, state[k]);
-
-		
 
 		/* hybrid cost */
 		if (k < T_min){
@@ -559,20 +559,22 @@ static void printsol(node_t initial) {
 			real_escape_cost,
 			ACCESS(escape, state[k])
 			);
-		fprintf(output, "%d \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \n",
-			k, 
-			state[k].x,
-			state[k].v,
-			c.u,
-			ACCESS(J, state[k]),
-			hybrid_cost,
-			ACCESS(J_opt, state[k]),
-			ACCESS(te_opt, state[k]),
-			p[k],
-			real_cost,
-			real_escape_cost,
-			ACCESS(escape, state[k])
-			);
+		if (OUTPUT) {
+			fprintf(output, "%d \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \n",
+				k, 
+				state[k].x,
+				state[k].v,
+				c.u,
+				ACCESS(J, state[k]),
+				hybrid_cost,
+				ACCESS(J_opt, state[k]),
+				ACCESS(te_opt, state[k]),
+				p[k],
+				real_cost,
+				real_escape_cost,
+				ACCESS(escape, state[k])
+				);
+		}
 
 		if (k < P.numsteps - 1) {
 			if ((nextptr = getnext(state[k], c)) == NULL) {
@@ -595,26 +597,19 @@ static void printsol(node_t initial) {
 
 	double xk = x0, vk = v0;
 	int opNumsteps = (int)(te - t0) + 1;
-	//double step = (te - t0) / (opNumsteps);
 	int count = 0;
 	double a_op[100];
 
-	//for (double t = t0; t <= (te); t = t + step) {
 	double step = (te - t0) / opNumsteps;
 	for (int i = 0; i < opNumsteps; i++) {
 		double t = (i*(te - t0) / (opNumsteps - 1) + t0);
 		a_op[count] = oc_control(t, t0, x0, v0, te);
-		// fprintf(output2, "%.4f \t", a_op[count]);
-		// fprintf(stderr, "t: %.4f(%.4f) -- count: %d \n", t, te, count);
 		count++;
 	}
 	
 	for (int i = 0; i < count; i++) {
 		xk += vk * step + 0.5*pow(step, 2)*a_op[i];
 		vk += step * a_op[i];
-
-		// fprintf(output2, "\n %.4f", xk);
-		// fprintf(output2, "\t %.4f", vk);
 	}
 
 	for (int i = 0; i < P.numsteps; i++)
@@ -631,8 +626,8 @@ static void printsol(node_t initial) {
 
 	free(state);
 	
-	fclose(output);
-	// fclose(output2);
+	if (OUTPUT)
+		fclose(output);
 }
 
 static void dp(void) {

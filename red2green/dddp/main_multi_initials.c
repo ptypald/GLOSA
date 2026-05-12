@@ -98,7 +98,7 @@ double *idm_x, *idm_v, *idm_u;
 double opt_J_it;
 double *init_x, *init_v, *init_u;
 double *initial_x, *initial_v, *initial_u;
-// double *initial_x, *initial_v, *initial_a; //fix all the vectors, check for un-needed
+
 /* UP problem */
 double te_up;
 double Dv, Dx;
@@ -244,7 +244,6 @@ static void init_D(double T, int iteration) {
 		
 		for (iv = 0; iv < D.NV[k]; iv++) {
 			D.V[iv][k] = D.vmin[k] + D.dv * iv;
-		// fprintf(stderr, "D.V[%d][%d]: %.3f \n", iv, k, D.V[iv][k]);
 		}
 	}
 	
@@ -266,7 +265,6 @@ static void init_D(double T, int iteration) {
 
 		for (ix = 0; ix < D.NX[k]; ix++) {
 			D.X[ix][k] = D.xmin[k] + D.dx * ix;
-		// fprintf(stderr, "(%d) D.X[%d][%d]: %.3f \n", D.NX[k], ix, k, D.X[ix][k]);
 		}
 	}
   
@@ -341,7 +339,6 @@ static int discretizexv(node_t *state, int k) {
 
 	ix = (int)round((state->x - D.X[0][k]) / D.dx);
 	iv = (int)round((state->v - D.V[0][k]) / D.dv);
-	//fprintf(stderr, "ix: %d -- x: %.3f -- D.X[0][%d]: %.3f \n", ix, state->x, k, D.X[0][k]);
 	if (!(ix >= 0 && ix < D.NX[k])) 
 		return 1;
 	
@@ -350,7 +347,7 @@ static int discretizexv(node_t *state, int k) {
 
 	state->x = D.X[(state->ix = ix)][k];
 	state->v = D.V[(state->iv = iv)][k];
-	//fprintf(stderr, "next.k: %d -- next.x: %.3f -- next.v: %.3f -- D.X[%d][%d]: %.3f \n", k, state->x, state->v, ix, k, D.X[ix][k]);
+
 	return 0;
 }
 
@@ -3804,10 +3801,6 @@ double idm_accel(double x, double xl, double v, double vl, double v0, double ts,
 			accIDM = idm.aMax * a1;
 		else
         	accIDM = idm.aMax * fmin(a1, a2);
-
-		/* second try */
-		// sStar = idm.s0 + fmax(v*ts + ((v * (v - vl)) / (2.0 * sqrt(idm.aMax * idm.b))), 0.0);
-		// accIDM = aFree - (idm.aMax * pow(sStar/s, 2));
     }
     else
         fprintf(stderr, "Unknown Leader Type. \n");
@@ -3866,7 +3859,6 @@ static void printsol(node_t initial, int it) {
 		}
 		
 		if (DISPLAY) {
-			// fprintf(stderr, "%d \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f\n",
 			fprintf(stderr, "%d \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \t %.4f \n",
 				k,
 				state[k].x,
@@ -3879,13 +3871,6 @@ static void printsol(node_t initial, int it) {
 				p[k],
 				real_cost,
 				real_escape_cost
-				// ACCESS(escape, state[k]),
-				// D.vmin[k],
-				// D.vmax[k],
-				// D.xmin[k],
-				// D.xmax[k],
-				// init_v[k],
-				// init_x[k]
 				);
 		}
 		if (OUTPUT) {
@@ -3946,28 +3931,8 @@ static void printsol(node_t initial, int it) {
 			x0 = state[t0].x;
 			v0 = state[t0].v;
 			te = ACCESS(te_opt, state[t0]);
-
-			// // steps = (int)(ceil(te) - t0);
-			// steps = 9;
-			// a_oc[i] = (double*)calloc(steps + 1, sizeof(double)); x_oc[i] = (double*)calloc(steps + 1, sizeof(double)); v_oc[i] = (double*)calloc(steps + 1, sizeof(double));
-			// dt = (te - t0) / (steps + 1);
-			// v_oc[i][0] = v0;
-			// for (int j = 0; j <= steps; j++) {
-			// 	t = ((j * dt) + t0);
-			// 	a_oc[i][j] = UP_control(t, t0, x0, v0, te);
-			// 	// v_oc[i][j] = UP_speed(t, t0, x0, v0, te);
-			// 	// x_oc[i][j] = UP_position(t, t0, x0, v0, te);
-			// 	v_oc[i][j + 1] = v_oc[i][j] + a_oc[i][j] * (te - t0) / (steps);
-			// 	fprintf(stderr,"%d \t (%.4f) \t %.4f \t %.4f \t %.4f \n", t0, t, a_oc[i][j], v_oc[i][j], x_oc[i][j]);
-			// }
-			// fprintf(stderr,"%d \t (%.4f) \t %.4f \t %.4f \n", t0, t, a_oc[i][steps], v_oc[i][steps]);
-
-			// double fuel_det = arrb(v_oc[i], a_oc[i], steps, dt);
-			// fprintf(stderr, "fuel deterministic: (%d) %.4f \n", t0, fuel_det);
-			// fprintf(stderr,"\n");
 			
 			double xk = x0, vk = v0;
-			// int opNumsteps = (int)(te - t0) + 1;
 			int opNumsteps = P.numsteps;
 			int count = 0;
 			double a_up[100], v_up[100], x_up[100];
@@ -3980,13 +3945,8 @@ static void printsol(node_t initial, int it) {
 			}
 			
 			for (int i = 0; i < count; i++) {
-				// x_up[i + 1] = x_up[i] + v_up[i] * step + 0.5 * pow(step, 2) * a_up[i];
-				// v_up[i + 1] = v_up[i] + step * a_up[i];
-				// xk += vk * step + 0.5 * pow(step, 2) * a_up[i];
 				vk += step * a_up[i];
-
 				v_up[i] = vk;
-				// fprintf(stderr, "v: %.4f -- x: %.4f \n", v_up[i+1], x_up[i+1]);
 			}
 			double fuel_det = arrb(v_up, a_up, count, step);
 			fprintf(stderr, "fuel deterministic: (%d) %.4f \n", t0, fuel_det);
@@ -4011,7 +3971,7 @@ static void dp(void) {
 			fprintf(stderr, "Deterministic DP \n");
 		fprintf(stderr, "NU: %d -- NV: %d -- NX: %d \n", D.NU, D.NV[2], D.NX[2]);
 	}
-	//fprintf(stderr, "NU: %d -- NV: %d -- NX: %d \n", D.NU, D.NV[2], D.NX[2]);
+
 	/* for each stage k */
 	for (k = P.numsteps - 1; k >= 0; k--) {
 		if (DISPLAY)
@@ -4164,17 +4124,14 @@ int main(int argc, char **argv) {
 
 	P.numsteps = (int)((T_max - T_tl)) + 1;
 	P.T = TIME_STEP;
-  // du = init_du;
 
   double scenario_x[] = { 0.0,  10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0 };
   double scenario_v[] = { 1.0,   2.0,  3.0,  4.0,  5.0,  6.0,  7.0,  8.0,  9.0, 10.0 };
 
-	// double loop for different initial conditions
 	for (int xi = 0; xi < 1; xi++) {
 		for (int vi = 0; vi < 1; vi++) {
 
       du = init_du;
-      // P.x0 = scenario_x[xi]; P.v0 = scenario_v[vi];
       P.x0 = 0.0; P.v0 = 5.0;
 			fprintf(stderr, "x0: %.4f -- v0: %.4f \n", P.x0, P.v0);
       
@@ -4195,9 +4152,6 @@ int main(int argc, char **argv) {
 			CP_problem(P.v0, P.x0, 0.0);
       if (negSpeedInitCon == 1) continue;
       
-			// for (int k = 0; k < P.numsteps; k++)
-			// 	fprintf(stderr, "(%d) \t init_x: %.4f \t init_v: %.4f \t init_a: %.4f \n", k, initial_x[k], initial_v[k], initial_u[k]);
-
       for (k = 0; k < P.numsteps; k++) {
         opt_x[k] = initial_x[k];
         opt_v[k] = initial_v[k];
