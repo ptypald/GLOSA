@@ -1,9 +1,9 @@
-# GLOSA Research Code
+# GLOSA Trajectory Optimization
 
-This repository collects research code and supporting notebooks for Green Light Optimal Speed Advisory (GLOSA) methods developed around two publications:
+This repository contains research code and supporting notebooks for Green Light Optimal Speed Advisory (GLOSA) trajectory optimization. The methods compute energy-efficient vehicle trajectories for signalized intersections under deterministic or uncertain traffic-signal switching times.
 
 1. **Vehicle Trajectory Specification in Presence of Traffic Lights with Known or Uncertain Switching Times**  
-   Panagiotis Typaldos, Ioanna Kalogianni, Kyriakos Simon Mountakis, Ioannis Papamichail, Markos Papageorgiou. TRB 2020 manuscript.
+   Panagiotis Typaldos, Ioanna Kalogianni, Kyriakos Simon Mountakis, Ioannis Papamichail, Markos Papageorgiou. *Transportation Research Record* (2020), 53-66.
 
 2. **Modified dynamic programming algorithms for GLOSA systems with stochastic signal switching times**  
    Panagiotis Typaldos, Markos Papageorgiou. *Transportation Research Part C*, 157 (2023), 104364.
@@ -11,6 +11,10 @@ This repository collects research code and supporting notebooks for Green Light 
 The code focuses on deterministic and stochastic trajectory generation for vehicles approaching signalized intersections, with implementations based on Stochastic Dynamic Programming (SDP), Discrete Differential Dynamic Programming (DDDP), and Differential Dynamic Programming (DDP).
 
 ![Illustrative traffic-signal timing example](./all%20signal%20phases/MFTS22/signal_example.png)
+
+## Status
+
+This repository contains research code associated with published work. It is maintained as a reference implementation rather than a production software package.
 
 ## Research focus
 
@@ -20,7 +24,7 @@ The repository studies how an approaching vehicle should shape its trajectory wh
 - uncertain but described by a switching-time distribution;
 - solved with faster approximate dynamic-programming variants suitable for more demanding online use cases.
 
-The implementation is research-oriented rather than packaged as a single application: each major source file corresponds to a concrete algorithmic experiment or paper-era comparison.
+Each major source file corresponds to a concrete algorithmic experiment or paper-era comparison.
 
 ## Repository map
 
@@ -50,7 +54,7 @@ all signal phases/
     pet/                     Companion variant of the same experiment family
 ```
 
-## How to read the repository
+## Where to start
 
 - `red2green/dp/` is the clearest starting point for the baseline stochastic DP formulation.
 - `red2green/journal TRC/` is the most publication-ready code area for the 2023 TRC paper and contains the SDP, DDDP, and DDP comparison implementations.
@@ -107,21 +111,6 @@ The large `j_opt_*.txt` and `te_opt_*.txt` files under `all signal phases/MFTS22
 - Scenario definitions, initial conditions, and mode switches are currently encoded in the source files rather than exposed through a unified command-line interface.
 - Several notebooks document derivations, plots, and experiment analysis alongside the C/C++ implementations.
 - The repository has been kept close to the paper-era folder layout so that code, notebooks, and publication artifacts remain easy to cross-reference.
-
-## Suggested repository metadata
-
-A concise GitHub description for this repository:
-
-> Dynamic-programming-based trajectory optimization for GLOSA systems with deterministic and stochastic traffic-signal timing.
-
-Suggested GitHub topics:
-
-- `glosa`
-- `optimal-control`
-- `dynamic-programming`
-- `trajectory-optimization`
-- `autonomous-vehicles`
-- `traffic-signals`
 
 ## Publications and citation
 
